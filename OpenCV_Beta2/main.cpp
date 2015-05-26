@@ -10,7 +10,7 @@
 #include "opencv2/gpu/gpu.hpp"
 #include "Suessigkeit.h"
 
-#define tresholdcamerafailure 250
+#define tresholdcamerafailure 250 // Wird zur beschleunigung und Stabilität benötigt!
 #define minHessian 400
 
 int minHessian_swap = minHessian; // Fuer andere Klassen!
