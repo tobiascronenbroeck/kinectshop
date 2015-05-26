@@ -10,8 +10,9 @@
 #include "opencv2/gpu/gpu.hpp"
 #include "Suessigkeit.h"
 
-#define tresholdcamerafailure 250 // Wird zur beschleunigung und Stabilität benötigt!
-#define minHessian 400
+#define tresholdcamerafailure 250 // Wird zur beschleunigung und Stabilitaet benötigt! Standart 250
+#define tresholdgoodcamerakeypoints 10 // Standart 10
+#define minHessian 400            // Schwellwert fuer Surf Detector!
 
 int minHessian_swap = minHessian; // Fuer andere Klassen!
 
@@ -39,25 +40,23 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 	
 	if (!(sortiment.empty())){
         
-			//SURFFEATUREDETECTOR
+			//SURF Keypoints fuer das Kamerabild wird berechnet!
 			SurfFeatureDetector detector(minHessian);
 			vector<KeyPoint> keypoints_scene;
             detector.detect(img_scene, keypoints_scene);
-			// Prueft ob Vergleich Sinn macht!
-			if (keypoints_scene.size() < tresholdcamerafailure)
-			{ 
-				/*cout << "Fehler beim verarbeiten des Kamerafeeds! ... Zu wenige Keypoints! (" 
-					 << keypoints_scene.size() 
-					 <<"/" << tresholdcamerafailure <<")"<< endl; */
-				return new Suessigkeit();;
-			}
-            //SURFDESCRIPTOREXTRACTOR
+
+			/* Prueft ob Vergleich Sinn macht! ->
+			falls zu wenige Keypoints gefunden werden wird hier schon NULL zurueckgegeben.*/
+			if (keypoints_scene.size() < tresholdcamerafailure)  { return new Suessigkeit(); }
+
+			/*Wenn Vergleich sinn macht werden die beschreibenden Merkmale des Kamerabildes erzeugt!
+			Diese werden in der Matrix descriptors_scene gespeichert!*/
 			SurfDescriptorExtractor extractor;
 			Mat descriptors_scene;
-			extractor.compute(img_scene, keypoints_scene, descriptors_scene);
+			extractor.compute(img_scene, keypoints_scene, descriptors_scene); // Anwendung des SurfExtractors
 
             vector<Suessigkeit*>::iterator iter;
-		for (iter = sortiment.begin(); iter != sortiment.end(); iter++){
+		    for (iter = sortiment.begin(); iter != sortiment.end(); iter++){
             //FLANNBasedMatcher
 			FlannBasedMatcher matcher;
 			vector< DMatch > matches;
@@ -94,7 +93,10 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 				scene.push_back(keypoints_scene[good_matches[i].trainIdx].pt);
 			}
 			
-			std::cout << "Anzahl der guten Keypoints: " << (scene.size()) << endl;
+			
+
+			// Es wird geprueft ob genuegend gute Keypoints vorhanden sind. (Performance und Stabilitaet)
+			if (scene.size() < tresholdgoodcamerakeypoints){ break; }
 
 			Mat H = findHomography(obj, scene, CV_RANSAC);
 			
@@ -114,25 +116,27 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 			Point2f dist1 = xEndpunkt - aufpunkt;
 			Point2f dist2 = yEndpunkt - aufpunkt;
 			Point2f checkpoint1 = aufpunkt + dist1 + dist2;
-
+			// 1. Qualifizierungsschritt
 			double distx = sqrt((dist1.x)*(dist1.x) + (dist1.y*dist1.y));
 			double disty = sqrt((dist2.x)*(dist2.x) + (dist2.y*dist2.y));
-
+			// 2. Qualifizierungsschritt
 			double area = fabs((dist1.x * dist2.x) + (dist1.y * dist2.y));
-           
-			
-			//-- Draw lines between the corners (the mapped object in the scene - image_2 )
-					line(img_matches, scene_corners[0] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[1] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
-					line(img_matches, scene_corners[1] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[2] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
-					line(img_matches, scene_corners[2] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[3] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
-					line(img_matches, scene_corners[3] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[0] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
-            imshow("Matches & Objects", img_matches);
+            // 3. Qualifizierungsschritt
+			double diag = sqrt((distx*distx) + (disty*disty)); // Laenge des Diagonalvektors, berechnet aus den 2 Stuetzvektoren
+			double diagref = sqrt(((checkpoint1.x) - (aufpunkt.x))*((checkpoint1.x) - (aufpunkt.x)) + ((checkpoint1.y) - (aufpunkt.y))*((checkpoint1.y) - (aufpunkt.y)));
+			if (fabs((diagref / diag) - 1) >= 0.02){ break; }  // Falls Perspektive zu deformiert ist, wird Berechnung abgebrochen!
 			if ((distx > 60) && (disty > 60))
 			{
 				if ((area >= minFlaeche) && (fabs((checkpoint1.x) - (opposite.x)) < 30 && (fabs((checkpoint1.y) - (opposite.y)) < 30)))
 				{   
+			        //-- Draw lines between the corners (the mapped object in the scene - image_2 )
+					line(img_matches, scene_corners[0] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[1] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
+					line(img_matches, scene_corners[1] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[2] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
+					line(img_matches, scene_corners[2] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[3] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
+					line(img_matches, scene_corners[3] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[0] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
+			
 					putText(img_matches, (*iter)->sName, opposite + Point2f(200, 30), FONT_HERSHEY_COMPLEX, 1, Scalar(0, 255, 0));
-					//-- Show detected matches
+					//Show detected matches
 					imshow("Good Matches & Object detection", img_matches);
 					return (*iter);
 				}
@@ -156,7 +160,7 @@ bool compareMatHist(Mat src, MatND ref, int compare_method = CV_COMP_CORREL){
 	cvtColor(src, HSV, COLOR_BGR2HSV);
 	calcHist(&HSV, 1, channels, Mat(), hist, 2, histSize, ranges, true, false);
 	normalize(hist, hist, 0, 1, NORM_MINMAX, -1, Mat());
-	return (compareHist(hist, ref, compare_method) > 0.002);
+	return (compareHist(hist, ref, compare_method) > 0.02);
 }
 
 int main()
