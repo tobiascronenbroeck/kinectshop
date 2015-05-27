@@ -62,7 +62,7 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 			vector< DMatch > matches;
 			matcher.match((*iter)->referencedescriptors, descriptors_scene, matches);
 
-			double max_dist=0;  double min_dist=500;
+			double max_dist=0;  double min_dist=150;
 			//-- Quick calculation of max and min distances between keypoints
 			for (int i = 0; i < ((*iter)->referencedescriptors).rows; i++)
 			{
