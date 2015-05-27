@@ -12,7 +12,7 @@
 
 #define tresholdcamerafailure 250 // Wird zur beschleunigung und Stabilitaet benötigt! Standart 250
 #define tresholdgoodcamerakeypoints 10 // Standart 10
-#define minHessian 400            // Schwellwert fuer Surf Detector!
+#define minHessian 350           // Schwellwert fuer Surf Detector!
 
 int minHessian_swap = minHessian; // Fuer andere Klassen!
 
@@ -160,7 +160,7 @@ bool compareMatHist(Mat src, MatND ref, int compare_method = CV_COMP_CORREL){
 	cvtColor(src, HSV, COLOR_BGR2HSV);
 	calcHist(&HSV, 1, channels, Mat(), hist, 2, histSize, ranges, true, false);
 	normalize(hist, hist, 0, 1, NORM_MINMAX, -1, Mat());
-	return (compareHist(hist, ref, compare_method) > 0.02);
+	return (compareHist(hist, ref, compare_method) > 0.05);
 }
 
 int main()
