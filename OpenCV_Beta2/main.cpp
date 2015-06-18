@@ -4,10 +4,10 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/features2d/features2d.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/flann/flann.hpp"
-#include "opencv2/gpu/gpu.hpp"
 #include "Suessigkeit.h"
 
 #define tresholdcamerafailure 250 // Wird zur beschleunigung und Stabilitaet benötigt! Standart 250
@@ -40,11 +40,12 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 	
 	if (!(sortiment.empty())){
         
+		//cout << endl;
 			//SURF Keypoints fuer das Kamerabild wird berechnet!
 			SurfFeatureDetector detector(minHessian);
 			vector<KeyPoint> keypoints_scene;
             detector.detect(img_scene, keypoints_scene);
-
+            //cout << "Keypoints found: " << keypoints_scene.size() << endl;
 			/* Prueft ob Vergleich Sinn macht! ->
 			falls zu wenige Keypoints gefunden werden wird hier schon NULL zurueckgegeben.*/
 			if (keypoints_scene.size() < tresholdcamerafailure)  { return new Suessigkeit(); }
@@ -96,6 +97,7 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 			
 
 			// Es wird geprueft ob genuegend gute Keypoints vorhanden sind. (Performance und Stabilitaet)
+			
 			if (scene.size() < tresholdgoodcamerakeypoints){ break; }
 
 			Mat H = findHomography(obj, scene, CV_RANSAC);
@@ -116,18 +118,25 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 			Point2f dist1 = xEndpunkt - aufpunkt;
 			Point2f dist2 = yEndpunkt - aufpunkt;
 			Point2f checkpoint1 = aufpunkt + dist1 + dist2;
+			//cout << "Matching Keypoints for " << (*iter)->sName << " : " << scene.size() << endl;
 			// 1. Qualifizierungsschritt
 			double distx = sqrt((dist1.x)*(dist1.x) + (dist1.y*dist1.y));
 			double disty = sqrt((dist2.x)*(dist2.x) + (dist2.y*dist2.y));
 			// 2. Qualifizierungsschritt
+			/*cout << "Koordinaten der Randpunkte : " << " 0: " << aufpunkt << " 1: " << xEndpunkt << " 2: " << opposite << " 3: " << yEndpunkt << endl;
+			cout << "laengeX: " << distx << endl;
+			cout << "laengeY: " << disty << endl;
+			cout << "übereinstimmung: " << checkpoint1 - opposite << endl;*/
 			double area = fabs((dist1.x * dist2.x) + (dist1.y * dist2.y));
             // 3. Qualifizierungsschritt
+			//cout << "Flaeche: " << area << endl;
+			//cout << endl;
 			//double diag = sqrt((distx*distx) + (disty*disty)); // Laenge des Diagonalvektors, berechnet aus den 2 Stuetzvektoren
 			//double diagref = sqrt(((checkpoint1.x) - (aufpunkt.x))*((checkpoint1.x) - (aufpunkt.x)) + ((checkpoint1.y) - (aufpunkt.y))*((checkpoint1.y) - (aufpunkt.y)));
 			//if (fabs((diagref / diag) - 1) >= 0.2){ cout << "dist Qualifizierung 3 : " << fabs((diagref / diag) - 1) << endl; break; }  // Falls Perspektive zu deformiert ist, wird Berechnung abgebrochen!
-			if ((distx > 60) && (disty > 60))
+			if ((distx > 100) && (disty > 100))
 			{
-				if ((area >= minFlaeche) && (fabs((checkpoint1.x) - (opposite.x)) < 30 && (fabs((checkpoint1.y) - (opposite.y)) < 30)))
+				if ((area >= minFlaeche) && (fabs((checkpoint1.x) - (opposite.x)) < 60 && (fabs((checkpoint1.y) - (opposite.y)) < 60)) && area <= 20000)
 				{   
 			        //-- Draw lines between the corners (the mapped object in the scene - image_2 )
 					line(img_matches, scene_corners[0] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[1] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
@@ -180,7 +189,7 @@ int main()
 			cout << "Camera dropped frame" << endl;
 			break; 
 		}
-		Suessigkeit::customresize(image_1, 600);
+		Suessigkeit::customresize(image_1, 500);
 		for (iter = sortiment.begin(); iter != sortiment.end(); iter++)
 		{
 			if (compareMatHist(image_1,( (*iter)->hist)))
@@ -198,7 +207,7 @@ int main()
 		{
 			cout << "Es handelt sich um das Objekt " << result->sName << endl;
 		}
-		
+				
 		
 	}
 	return 0;
