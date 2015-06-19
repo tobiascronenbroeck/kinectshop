@@ -10,7 +10,7 @@
 #include "opencv2/flann/flann.hpp"
 #include "Suessigkeit.h"
 
-#define tresholdcamerafailure 250 // Wird zur beschleunigung und Stabilitaet benötigt! Standart 250
+#define tresholdcamerafailure 150 // Wird zur beschleunigung und Stabilitaet benötigt! Standart 250
 #define tresholdgoodcamerakeypoints 10 // Standart 10
 #define minHessian 350           // Schwellwert fuer Surf Detector!
 
@@ -123,10 +123,10 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 			double distx = sqrt((dist1.x)*(dist1.x) + (dist1.y*dist1.y));
 			double disty = sqrt((dist2.x)*(dist2.x) + (dist2.y*dist2.y));
 			// 2. Qualifizierungsschritt
-			/*cout << "Koordinaten der Randpunkte : " << " 0: " << aufpunkt << " 1: " << xEndpunkt << " 2: " << opposite << " 3: " << yEndpunkt << endl;
-			cout << "laengeX: " << distx << endl;
-			cout << "laengeY: " << disty << endl;
-			cout << "übereinstimmung: " << checkpoint1 - opposite << endl;*/
+			//cout << "Koordinaten der Randpunkte : " << " 0: " << aufpunkt << " 1: " << xEndpunkt << " 2: " << opposite << " 3: " << yEndpunkt << endl;
+			//cout << "laengeX: " << distx << endl;
+			//cout << "laengeY: " << disty << endl;
+			//cout << "übereinstimmung: " << checkpoint1 - opposite << endl;
 			double area = fabs((dist1.x * dist2.x) + (dist1.y * dist2.y));
             // 3. Qualifizierungsschritt
 			//cout << "Flaeche: " << area << endl;
@@ -136,7 +136,7 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 			//if (fabs((diagref / diag) - 1) >= 0.2){ cout << "dist Qualifizierung 3 : " << fabs((diagref / diag) - 1) << endl; break; }  // Falls Perspektive zu deformiert ist, wird Berechnung abgebrochen!
 			if ((distx > 100) && (disty > 100))
 			{
-				if ((area >= minFlaeche) && (fabs((checkpoint1.x) - (opposite.x)) < 60 && (fabs((checkpoint1.y) - (opposite.y)) < 60)) && area <= 20000)
+				if ((area >= minFlaeche) && (fabs((checkpoint1.x) - (opposite.x)) < 60 && (fabs((checkpoint1.y) - (opposite.y)) < 60)) && area <= 10000)
 				{   
 			        //-- Draw lines between the corners (the mapped object in the scene - image_2 )
 					line(img_matches, scene_corners[0] + Point2f(((*iter)->GrayScaleImage).cols, 0), scene_corners[1] + Point2f(((*iter)->GrayScaleImage).cols, 0), Scalar(0, 255, 0), 4);
@@ -180,7 +180,7 @@ int main()
 	vector<Suessigkeit*> auswahl;
 	vector<Suessigkeit*>::iterator iter;
 
-	while (waitKey(30) != 'q'){
+	while (waitKey(50) != 'q'){
 		auswahl.clear();
 		cap >> image_1;
 		
@@ -189,16 +189,18 @@ int main()
 			cout << "Camera dropped frame" << endl;
 			break; 
 		}
-		Suessigkeit::customresize(image_1, 500);
+		Suessigkeit::customresize(image_1, 400);
+		//cout << "Total Area: " << image_1.cols*image_1.rows << endl;
 		for (iter = sortiment.begin(); iter != sortiment.end(); iter++)
 		{
 			if (compareMatHist(image_1,( (*iter)->hist)))
 			{
 				auswahl.push_back((*iter));
-				cout << (*iter)->sName << " - ";
+				//cout << (*iter)->sName << " - ";
 			}
 		}
-		cout << endl;
+		
+		//cout << endl;
          imshow("Kamerabild", image_1);
 		cvtColor(image_1, image_1, CV_BGR2GRAY);
 
