@@ -1,3 +1,7 @@
+# kinectshop
+
+http://youtu.be/hUVhaD__KiY zeigt aktuellen Stand des Projekts
+-----------------------------------------------------------------------------------------------------
 # kinectshop 
 
 folgende Klassen sind erforderlich:
