@@ -26,11 +26,9 @@ vector<Suessigkeit*> sortiment;
 //////////////////////////////////////////////////////////////////////////////////
 void intdatabase()
 {
-	sortiment.push_back(new Suessigkeit("referenceimage-1-.jpg", "Haribo"));
-	sortiment.push_back(new Suessigkeit("referenceimage-2-.jpg", "Raspberry_PI_2"));
+    sortiment.push_back(new Suessigkeit("referenceimage-2-.jpg", "Raspberry_PI_2"));
 	sortiment.push_back(new Suessigkeit("referenceimage-7-.jpg", "Raspberry_PI_B+"));
 	sortiment.push_back(new Suessigkeit("referenceimage-3-.jpg", "Weisse_Schokolade"));
-	sortiment.push_back(new Suessigkeit("referenceimage-6-.jpg", "The_GAME"));
 }
 //////////////////////////////////////////////////////////////////////////////////
 /// customsurfdetector returns an pointer to the detected object
@@ -38,14 +36,13 @@ void intdatabase()
 Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene, double minFlaeche = 300)
 {
 	
-	if (!(sortiment.empty())){
-        
-		//cout << endl;
+	if (!(sortiment.empty()))
+	{
 			//SURF Keypoints fuer das Kamerabild wird berechnet!
 			SurfFeatureDetector detector(minHessian);
 			vector<KeyPoint> keypoints_scene;
             detector.detect(img_scene, keypoints_scene);
-            //cout << "Keypoints found: " << keypoints_scene.size() << endl;
+           
 			/* Prueft ob Vergleich Sinn macht! ->
 			falls zu wenige Keypoints gefunden werden wird hier schon NULL zurueckgegeben.*/
 			if (keypoints_scene.size() < tresholdcamerafailure)  { return new Suessigkeit(); }
@@ -118,22 +115,11 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 			Point2f dist1 = xEndpunkt - aufpunkt;
 			Point2f dist2 = yEndpunkt - aufpunkt;
 			Point2f checkpoint1 = aufpunkt + dist1 + dist2;
-			//cout << "Matching Keypoints for " << (*iter)->sName << " : " << scene.size() << endl;
-			// 1. Qualifizierungsschritt
+			
 			double distx = sqrt((dist1.x)*(dist1.x) + (dist1.y*dist1.y));
 			double disty = sqrt((dist2.x)*(dist2.x) + (dist2.y*dist2.y));
-			// 2. Qualifizierungsschritt
-			//cout << "Koordinaten der Randpunkte : " << " 0: " << aufpunkt << " 1: " << xEndpunkt << " 2: " << opposite << " 3: " << yEndpunkt << endl;
-			//cout << "laengeX: " << distx << endl;
-			//cout << "laengeY: " << disty << endl;
-			//cout << "übereinstimmung: " << checkpoint1 - opposite << endl;
 			double area = fabs((dist1.x * dist2.x) + (dist1.y * dist2.y));
-            // 3. Qualifizierungsschritt
-			//cout << "Flaeche: " << area << endl;
-			//cout << endl;
-			//double diag = sqrt((distx*distx) + (disty*disty)); // Laenge des Diagonalvektors, berechnet aus den 2 Stuetzvektoren
-			//double diagref = sqrt(((checkpoint1.x) - (aufpunkt.x))*((checkpoint1.x) - (aufpunkt.x)) + ((checkpoint1.y) - (aufpunkt.y))*((checkpoint1.y) - (aufpunkt.y)));
-			//if (fabs((diagref / diag) - 1) >= 0.2){ cout << "dist Qualifizierung 3 : " << fabs((diagref / diag) - 1) << endl; break; }  // Falls Perspektive zu deformiert ist, wird Berechnung abgebrochen!
+  
 			if ((distx > 100) && (disty > 100))
 			{
 				if ((area >= minFlaeche) && (fabs((checkpoint1.x) - (opposite.x)) < 60 && (fabs((checkpoint1.y) - (opposite.y)) < 60)) && area <= 10000)
@@ -154,23 +140,6 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 	}
 	return new Suessigkeit();
 }
-//////////////////////////////////////////////////////////////////////////////////
-/// comparehist 
-//////////////////////////////////////////////////////////////////////////////////
-bool compareMatHist(Mat src, MatND ref, int compare_method = CV_COMP_CORREL){
-	Mat HSV;
-	MatND hist;
-	int histSize[2] = { 50, 60 };
-	float h_ranges[2] = { 0, 180 };
-	float s_ranges[2] = { 0, 256 };
-	const float* ranges[2] = { h_ranges, s_ranges };
-	int channels[2] = { 0, 1 };
-
-	cvtColor(src, HSV, COLOR_BGR2HSV);
-	calcHist(&HSV, 1, channels, Mat(), hist, 2, histSize, ranges, true, false);
-	normalize(hist, hist, 0, 1, NORM_MINMAX, -1, Mat());
-	return (compareHist(hist, ref, compare_method) > 0.05);
-}
 
 int main()
 {
@@ -183,28 +152,13 @@ int main()
 	while (waitKey(50) != 'q'){
 		auswahl.clear();
 		cap >> image_1;
-		
-		if (!image_1.data)
-		{
-			cout << "Camera dropped frame" << endl;
-			break; 
-		}
-		Suessigkeit::customresize(image_1, 400);
-		//cout << "Total Area: " << image_1.cols*image_1.rows << endl;
-		for (iter = sortiment.begin(); iter != sortiment.end(); iter++)
-		{
-			if (compareMatHist(image_1,( (*iter)->hist)))
-			{
-				auswahl.push_back((*iter));
-				//cout << (*iter)->sName << " - ";
-			}
-		}
-		
-		//cout << endl;
-         imshow("Kamerabild", image_1);
-		cvtColor(image_1, image_1, CV_BGR2GRAY);
+		imshow("Kamerabild", image_1);
+        if (!image_1.data) { break; }
 
-		Suessigkeit* result = customsurfdetector(auswahl, image_1);
+		Suessigkeit::customresize(image_1, 400);
+		cvtColor(image_1, image_1, CV_BGR2GRAY);
+		Suessigkeit* result = customsurfdetector(sortiment, image_1);
+		
 		if ((result)->sName != "NULL")
 		{
 			cout << "Es handelt sich um das Objekt " << result->sName << endl;
