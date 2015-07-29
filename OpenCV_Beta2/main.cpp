@@ -9,8 +9,10 @@
 #include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/flann/flann.hpp"
 #include "Suessigkeit.h"
+#include <ctime>
 
-#define tresholdcamerafailure 150 // Wird zur beschleunigung und Stabilitaet benötigt! Standart 250
+
+#define tresholdcamerafailure 250 // Wird zur beschleunigung und Stabilitaet benötigt! Standart 250
 #define tresholdgoodcamerakeypoints 10 // Standart 10
 #define minHessian 350           // Schwellwert fuer Surf Detector!
 
@@ -26,8 +28,13 @@ vector<Suessigkeit*> sortiment;
 //////////////////////////////////////////////////////////////////////////////////
 void intdatabase()
 {
-    sortiment.push_back(new Suessigkeit("referenceimage-2-.jpg", "Raspberry_PI_2"));
-	sortiment.push_back(new Suessigkeit("referenceimage-7-.jpg", "Raspberry_PI_B+"));
+	
+	/*sortiment.push_back(new Suessigkeit("referenceimage-1-.jpg", "Weisse_Schokolade"));
+	sortiment.push_back(new Suessigkeit("referenceimage-2-.jpg", "Weisse_Schokolade"));
+	sortiment.push_back(new Suessigkeit("referenceimage-4-.jpg", "Weisse_Schokolade"));
+	sortiment.push_back(new Suessigkeit("referenceimage-5-.jpg", "Weisse_Schokolade"));
+	sortiment.push_back(new Suessigkeit("referenceimage-6-.jpg", "Weisse_Schokolade"));
+	sortiment.push_back(new Suessigkeit("referenceimage-7-.jpg", "Weisse_Schokolade"));*/
 	sortiment.push_back(new Suessigkeit("referenceimage-3-.jpg", "Weisse_Schokolade"));
 }
 //////////////////////////////////////////////////////////////////////////////////
@@ -143,6 +150,7 @@ Suessigkeit* customsurfdetector(vector<Suessigkeit*> &sortiment, Mat &img_scene,
 
 int main()
 {
+
 	VideoCapture cap(0);
 	Mat image_1;
 	intdatabase();
@@ -150,11 +158,14 @@ int main()
 	vector<Suessigkeit*>::iterator iter;
 
 	while (waitKey(50) != 'q'){
+
+		unsigned int start = clock();
 		auswahl.clear();
 		cap >> image_1;
-		imshow("Kamerabild", image_1);
-        if (!image_1.data) { break; }
-
+		if (!image_1.data) { break; }
+	
+		Mat image_2(image_1);
+		
 		Suessigkeit::customresize(image_1, 400);
 		cvtColor(image_1, image_1, CV_BGR2GRAY);
 		Suessigkeit* result = customsurfdetector(sortiment, image_1);
@@ -163,7 +174,11 @@ int main()
 		{
 			cout << "Es handelt sich um das Objekt " << result->sName << endl;
 		}
-				
+
+		double deltatime = clock() - start;
+		int fps = (int)(1000 / (deltatime)) + 1;
+		putText(image_2, to_string(fps), Point2f(image_2.cols,image_2.rows) - Point2f(80,20), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0),3);
+		imshow("Kamerabild", image_2);		
 		
 	}
 	return 0;
