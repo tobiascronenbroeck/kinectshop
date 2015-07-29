@@ -28,13 +28,15 @@ vector<Suessigkeit*> sortiment;
 //////////////////////////////////////////////////////////////////////////////////
 void intdatabase()
 {
-	
-	/*sortiment.push_back(new Suessigkeit("referenceimage-1-.jpg", "Weisse_Schokolade"));
-	sortiment.push_back(new Suessigkeit("referenceimage-2-.jpg", "Weisse_Schokolade"));
-	sortiment.push_back(new Suessigkeit("referenceimage-4-.jpg", "Weisse_Schokolade"));
-	sortiment.push_back(new Suessigkeit("referenceimage-5-.jpg", "Weisse_Schokolade"));
-	sortiment.push_back(new Suessigkeit("referenceimage-6-.jpg", "Weisse_Schokolade"));
-	sortiment.push_back(new Suessigkeit("referenceimage-7-.jpg", "Weisse_Schokolade"));*/
+	/*sortiment.push_back(new Suessigkeit("referenceimage-1-.jpg", "Haribo"));
+	sortiment.push_back(new Suessigkeit("referenceimage-2-.jpg", "Raspberry PI 2"));
+	sortiment.push_back(new Suessigkeit("referenceimage-4-.jpg", "Salz"));
+	sortiment.push_back(new Suessigkeit("referenceimage-5-.jpg", "Grippostad"));
+	sortiment.push_back(new Suessigkeit("referenceimage-6-.jpg", "The Game"));
+	sortiment.push_back(new Suessigkeit("referenceimage-7-.jpg", "Raspberry PI B+"));
+	sortiment.push_back(new Suessigkeit("referenceimage-8-.jpg", "Grippostad"));
+	sortiment.push_back(new Suessigkeit("referenceimage-9-.jpg", "The Game"));
+	sortiment.push_back(new Suessigkeit("referenceimage-10-.jpg", "Raspberry PI B+"));*/
 	sortiment.push_back(new Suessigkeit("referenceimage-3-.jpg", "Weisse_Schokolade"));
 }
 //////////////////////////////////////////////////////////////////////////////////
